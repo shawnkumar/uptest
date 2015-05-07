@@ -20,15 +20,11 @@ def update(revision):
     # get the current configuration from cassandra.yaml
     with open('~/fab/cassandra/conf/cassandra.yaml','r') as conf_file:
         config = yaml.load(conf_file)
-
-    if git_fetch:
-        git_checkout_status = run('test -d ~/fab/cassandra.git', quiet=True)
-        if git_checkout_status.return_code > 0:
-            run('git init --bare ~/fab/cassandra.git')
-            for name,url in git_repos:
-                run('git --git-dir=$HOME/fab/cassandra.git remote add {name} {url}'
-                        .format(name=name, url=url), quiet=True)
-
+    git_checkout_status = run('test -d ~/fab/cassandra.git', quiet=True)
+    if git_checkout_status.return_code > 0:
+        run('git init --bare ~/fab/cassandra.git')
+        for name,url in git_repos:
+            run('git --git-dir=$HOME/fab/cassandra.git remote add {name} {url}'.format(name=name, url=url), quiet=True)
         for name,url in reversed(git_repos):
             run('git --git-dir=$HOME/fab/cassandra.git fetch {name}'.format(name=name))
 
@@ -40,8 +36,9 @@ def update(revision):
     # Build Cassandra Checkout revision/tag:
     run('mkdir ~/fab/cassandra')
     run('git --git-dir=$HOME/fab/cassandra.git archive %s | tar x -C ~/fab/cassandra' % revision)
-    run('echo -e \'%s\\n%s\\n\' > ~/fab/cassandra/0.GIT_REVISION.txt' % (revision, git_id,))
+    run('echo -e \'%s\\n%s\\n\' > ~/fab/cassandra/0.GIT_REVISION.txt' % (revision, git_id))
     run('JAVA_HOME=~/fab/java ~/fab/ant/bin/ant -f ~/fab/cassandra/build.xml clean'
+    run('JAVA_HOME=~/fab/java ~/fab/ant/bin/ant -f ~/fab/cassandra/build.xml -Dversion={version}'.format(version=version))
 
     # Save config:
     conf_file = StringIO()
