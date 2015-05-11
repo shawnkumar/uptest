@@ -37,7 +37,7 @@ def update(revision):
     run('mkdir ~/fab/cassandra')
     run('git --git-dir=$HOME/fab/cassandra.git archive %s | tar x -C ~/fab/cassandra' % revision)
     run('echo -e \'%s\\n%s\\n\' > ~/fab/cassandra/0.GIT_REVISION.txt' % (revision, git_id))
-    run('JAVA_HOME=~/fab/java ~/fab/ant/bin/ant -f ~/fab/cassandra/build.xml clean'
+    run('JAVA_HOME=~/fab/java ~/fab/ant/bin/ant -f ~/fab/cassandra/build.xml clean')
     run('JAVA_HOME=~/fab/java ~/fab/ant/bin/ant -f ~/fab/cassandra/build.xml -Dversion={version}'.format(version=version))
 
     # Save config:

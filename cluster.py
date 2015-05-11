@@ -102,7 +102,7 @@ class Cluster(object):
             p.wait()
 
     def round_robin_update(self, version):
-        for node in self.hosts:
+        for node in self.nodelist:
             self.nodetool('drain', nodes=[node])
             node.stop()
             node.update(version)

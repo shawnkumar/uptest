@@ -1,5 +1,5 @@
 from fabric.api import *
-from nodetasks import *
+from fab_node import *
 
 class Node:
     

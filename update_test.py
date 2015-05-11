@@ -39,7 +39,8 @@ class TestUpdate():
         else:
             return int(value)
 
-    def fillData(self, target, firstkey=0, cluster):
+    def fillData(self, target, cluster):
+        firstkey = 0
         print "Commencing data adding phase"
         nodestring = cluster.get_nodestring()
         checking = True
@@ -77,7 +78,7 @@ class TestUpdate():
                 keysneeded = int(float(target - currentsize)/float(270))
                 with open(os.devnull, 'w') as nl:
                     lastkey = firstkey + keysneeded
-                    cluster.stress("write n={keysneeded} -pop seq={firstkey}..{lastkey} no-wrap -schema replication(factor=2)".format(keysneeded=str(keysneeded), firstkey=str(firstkey), lastkey=str(lastkey))
+                    cluster.stress("write n={keysneeded} -pop seq={firstkey}..{lastkey} no-wrap -schema replication(factor=2)".format(keysneeded=str(keysneeded), firstkey=str(firstkey), lastkey=str(lastkey)))
                     firstkey = lastkey + 1
                     print "Flushing"
                     cluster.nodetool('flush')
