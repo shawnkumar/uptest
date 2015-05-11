@@ -1,4 +1,4 @@
-from node import ValNode
+from node import Node
 from fabric.api import *
 from subprocess import Popen
 from cassandra.cluster import Cluster
@@ -10,13 +10,19 @@ class Cluster(object):
         self.nodelist = []
         self.hosts = nodelist
         for item in nodelist:
-            self.nodelist.append(ValNode(item))
+            self.nodelist.append(Node(item))
             
     def clean_bootstrap(self, version):
         local("cstar_perf_bootstrap -v " + version)
 
     def get_nodes(self):
         return self.nodelist
+
+    def get_nodestring(self):
+        nodestring = ''
+        for node in self.nodelist:
+            nodestring.append(node.get_address() + ',')
+        return nodestring[:-1]
 
     def get_session(self, nodes, keyspace=None, exclusive=False, cons_level=None):
         node_ips = []
@@ -38,14 +44,21 @@ class Cluster(object):
             session.default_consistency_level = cons_level
         return session
 
-    def stress(self, command, nodes, parallel=False):
+    def stress(self, command, nodes=None, parallel=False):
         base = 'JAVA_HOME=~/fab/java ~/fab/stress/cassandra-2.1/tools/bin/cassandra-stress'
         hosts = ""
-        for node in nodes:
-            if hosts != '':
-                hosts += "," + node.get_address()
-            else:
-                hosts = node.get_address()
+        if nodes != None:
+            for node in nodes:
+                if hosts != '':
+                    hosts += "," + node.get_address()
+                else:
+                    hosts = node.get_address()
+        else:
+            for node in self.nodelist:
+                if hosts != '':
+                    hosts += "," + node.get_address()
+                else:
+                    hosts = node.get_address()
         hosts = "-node " + hosts
         line = "{base} {cmd} {hosts}".format(base=base, cmd=command, hosts=hosts)
         if parallel == True:
@@ -62,28 +75,35 @@ class Cluster(object):
         except:
             print "Unable to create keyspace, may already exist"
 
-    def nodetool(self, cmd, nodes, capture_output=False, parallel=False):
+    def nodetool(self, cmd, nodes=None, capture_output=False, parallel=False):
         base = 'JAVA_HOME=~/fab/java ~/fab/stress/cassandra-2.1/bin/nodetool'
         hosts = ""
-        for node in nodes:
-            if hosts != '':
-                hosts += "," + node.get_address()
-            else:
-                hosts = node.get_address()
+        if nodes != None:
+            for node in nodes:
+                if hosts != '':
+                    hosts += "," + node.get_address()
+                else:
+                    hosts = node.get_address()
+        else:
+            for node in self.nodelist:
+                if hosts != '':
+                    hosts += "," + node.get_address()
+                else:
+                    hosts = node.get_address()
+
         command = "{base} {nodes} {cmds}".format(base=base, nodes=hosts, cmds=cmd)
         if parallel:
             p = Popen(command, shell=True)
         elif capture_output:
-            p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+            p = Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             return p.communicate()
         else:
             p = subprocess.Popen(command, shell=True)
             p.wait()
 
-    def update(self, version, nodes=None):
-        if nodes != None:
-            for node in nodes:
-                node.update(version)
-        else:
-            for node in self.hosts:
-                node.update(version)
+    def round_robin_update(self, version):
+        for node in self.hosts:
+            self.nodetool('drain', nodes=[node])
+            node.stop()
+            node.update(version)
+            node.start()

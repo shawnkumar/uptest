@@ -12,5 +12,8 @@ class Node:
     def stop(self):
         execute(stop, hosts=self.hosts)
 
+    def update(self,version):
+        execute(update, version, hosts=self.hosts)
+
     def get_address(self):
         return self.hosts[0]
