@@ -15,13 +15,25 @@ class TestUpdate():
 
         cluster.round_robin_update('apache/trunk')
 
-        repout_node1 = cluster.nodetool('repair -hosts ' + node1.get_address(), nodes=[node1], capture_output=True)
-        repout_node2 = cluster.nodetool('repair -hosts ' + node2.get_address(), nodes=[node2], capture_output=True)
+        repout_n1 = cluster.nodetool('repair -hosts ' + node1.get_address(), nodes=[node1], capture_output=True)
+        repout_n2 = cluster.nodetool('repair -hosts ' + node2.get_address(), nodes=[node2], capture_output=True)
 
-        self.
+        (output1, error1) = repout_n1[0]
+
+        #check return values of repair is succesful
+        self.assertEqual(repout_n1[1], 1)
+        self.assertEqual(repout_n2[1], 1)
+
+        #perform some basic validation to check querying values works
+        output = cluster.stress("read n={numWrites} -pop seq=1..{lastkey} no-wrap")
+
+        #check validation error-free
+        self.assertEqual(output.return_code, 1)
+
+
 
     def checkDataSize(self, cluster):
-        (output, error) = cluster.nodetool("cfstats", capture_output=True)
+        (output, error) = cluster.nodetool("cfstats", capture_output=True)[0]
         abort = False
         if output.find("Standard1") == -1:
             abort = True
@@ -98,6 +110,6 @@ class TestUpdate():
         nodes = cluster.get_nodes()
         for node in nodes:
             while True: 
-                output = cluster.nodetool('compactionstats', nodes=[node], capture_output=True)
+                (output,_) = cluster.nodetool('compactionstats', nodes=[node], capture_output=True)[0]
                 if pattern.match(output):
                     break
