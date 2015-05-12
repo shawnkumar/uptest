@@ -88,12 +88,13 @@ class TestUpdate():
                 underTarget = False
         return lastkey
 
-    def waitForCompactions(self, nodes):
+    def waitForCompactions(self, cluster):
         """Check for compactions via nodetool compactionstats"""
         pattern = re.compile("^pending tasks: 0\n")
         print "Waiting for compactions to finish"
+        nodes = cluster.get_nodes()
         for node in nodes:
             while True: 
-                output = cluster.nodetool('compactionstats', nodes=nodes, capture_output=True)
+                output = cluster.nodetool('compactionstats', nodes=[node], capture_output=True)
                 if pattern.match(output):
                     break

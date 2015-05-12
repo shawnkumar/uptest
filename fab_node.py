@@ -5,21 +5,30 @@ def start():
     run('JAVA_HOME=~/fab/java nohup ~/fab/cassandra/bin/cassandra')
 
 def stop():
-    run('pkill -9 -f "java.*org.apache.*.CassandraDaemon"')
+    with settings(warn_only=True):
+        run('pkill -9 -f "java.*org.apache.*.CassandraDaemon"')
 
 def update(revision):
     # make sure cassandra is dead
-    run('pkill -9 -f "java.*org.apache.*.CassandraDaemon"')
+    
+    with settings(warn_only=True):
+        run('pgrep -f cassa | xargs kill')
 
-    with open('~/fab/cassandra/conf/cassandra-topology.properties', 'r') as tp:
-        topology = tp.read()
+    topIO = StringIO()
+    get('~/fab/cassandra/conf/cassandra-topology.properties', topIO)
+    topIO.seek(0)
+    topology = topIO.read()
 
-    with open('~/fab/cassandra/conf/cassandra-rackdc.properties', 'r') as rdc:
-        rackdc = rdc.read()
+    rackdcIO = StringIO()
+    get('~/fab/cassandra/conf/cassandra-rackdc.properties', rackdcIO)
+    rackdcIO.seek(0)
+    rackdc = rackdcIO.read()
 
-    # get the current configuration from cassandra.yaml
-    with open('~/fab/cassandra/conf/cassandra.yaml','r') as conf_file:
-        config = yaml.load(conf_file)
+    yamlIO = StringIO()
+    get('~/fab/cassandra/conf/cassandra.yaml', yamlIO)
+    yamlIO.seek(0)
+    config = yaml.load(yamlIO.read())
+
     git_checkout_status = run('test -d ~/fab/cassandra.git', quiet=True)
     if git_checkout_status.return_code > 0:
         run('git init --bare ~/fab/cassandra.git')

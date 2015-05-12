@@ -1,6 +1,6 @@
 from node import Node
 from fabric.api import *
-from subprocess import Popen
+from subprocess import Popen, PIPE
 from cassandra.cluster import Cluster
 from cassandra.policies import WhiteListRoundRobinPolicy
 
@@ -95,10 +95,10 @@ class Cluster(object):
         if parallel:
             p = Popen(command, shell=True)
         elif capture_output:
-            p = Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+            p = Popen(command, stdout=PIPE, stderr=PIPE, shell=True)
             return p.communicate()
         else:
-            p = subprocess.Popen(command, shell=True)
+            p = Popen(command, shell=True)
             p.wait()
 
     def round_robin_update(self, version):
