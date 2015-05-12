@@ -1,6 +1,6 @@
 from node import Node
 from fabric.api import *
-from subprocess import Popen
+from subprocess import Popen, PIPE
 from cassandra.cluster import Cluster
 from cassandra.policies import WhiteListRoundRobinPolicy
 
@@ -21,7 +21,7 @@ class Cluster(object):
     def get_nodestring(self):
         nodestring = ''
         for node in self.nodelist:
-            nodestring.append(node.get_address() + ',')
+            nodestring += node.get_address() + ','
         return nodestring[:-1]
 
     def get_session(self, nodes, keyspace=None, exclusive=False, cons_level=None):
@@ -91,14 +91,16 @@ class Cluster(object):
                 else:
                     hosts = node.get_address()
 
-        command = "{base} {nodes} {cmds}".format(base=base, nodes=hosts, cmds=cmd)
+        hostnodes = "-h " + hosts
+
+        command = "{base} {nodes} {cmds}".format(base=base, nodes=hostnodes, cmds=cmd)
         if parallel:
             p = Popen(command, shell=True)
         elif capture_output:
-            p = Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+            p = Popen(command, stdout=PIPE, stderr=PIPE, shell=True)
             return p.communicate()
         else:
-            p = subprocess.Popen(command, shell=True)
+            p = Popen(command, shell=True)
             p.wait()
 
     def round_robin_update(self, version):
