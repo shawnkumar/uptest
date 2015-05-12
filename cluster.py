@@ -61,10 +61,10 @@ class Cluster(object):
                     hosts = node.get_address()
         hosts = "-node " + hosts
         line = "{base} {cmd} {hosts}".format(base=base, cmd=command, hosts=hosts)
-        if parallel == True:
-            p = Popen(line, shell=True)
-        else:
-            local(line)
+        p = Popen(line, stdout=PIPE, stderr=PIPE, shell=True)
+        info = p.communicate()
+        rc = p.returncode
+        return (info, rc)
 
     def create_ks(self, keyspace, settings):
         session = self.get_session(self.nodelist)
@@ -98,7 +98,9 @@ class Cluster(object):
             p = Popen(command, shell=True)
         elif capture_output:
             p = Popen(command, stdout=PIPE, stderr=PIPE, shell=True)
-            return p.communicate()
+            info = p.communicate()
+            rc = p.returncode
+            return [info, rc]
         else:
             p = Popen(command, shell=True)
             p.wait()

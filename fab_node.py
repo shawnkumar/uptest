@@ -65,3 +65,7 @@ def update(revision):
     rackdc_file.write(rackdc)
     rackdc_file.seek(0)
     put(rackdc_file, '~/fab/cassandra/conf/cassandra-rackdc.properties')
+
+def get_log(address):
+    path = get(remote_path='~/fab/cassandra/logs/system.log', local_path='~/fab/'+ address + '.log')
+    return path[0]

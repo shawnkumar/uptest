@@ -2,6 +2,7 @@ from cluster import Cluster
 from node import Node
 from utils import *
 import re
+from fabric.api import get
 
 class TestUpdate():
 
@@ -19,18 +20,49 @@ class TestUpdate():
         repout_n2 = cluster.nodetool('repair -hosts ' + node2.get_address(), nodes=[node2], capture_output=True)
 
         (output1, error1) = repout_n1[0]
+        (output2, error2) = repout_n1[0]
 
         #check return values of repair is succesful
-        self.assertEqual(repout_n1[1], 1)
-        self.assertEqual(repout_n2[1], 1)
+        self.assertEqual(repout_n1[1], 1, str(error1))
+        self.assertEqual(repout_n2[1], 1, str(error2))
 
         #perform some basic validation to check querying values works
-        output = cluster.stress("read n={numWrites} -pop seq=1..{lastkey} no-wrap")
+        (info, rc)= cluster.stress("read n={numWrites} -pop seq=1..{lastkey} no-wrap".format(numWrites=lastkey, lastkey=lastkey))
 
         #check validation error-free
-        self.assertEqual(output.return_code, 1)
+        self.assertEqual(rc, 1)
 
+        #check that there are no errors in logs:
+        self.check_logs(cluster)
 
+    def check_logs(self, cluster):
+        nodes = cluster.get_nodes()
+        for node in nodes:
+            path = node.get_log(node.get_address().replace('.', ''))
+            errors = self.grep_log_for_errors(path)
+            if len(errors) is not 0:
+                raise AssertionError('Unexpected error in %s node log: %s' % (node.get_address(), errors))
+    
+    def grep_log_for_errors(self, path):
+        """
+        Returns a list of errors with stack traces
+        in the Cassandra log of this node
+        """
+        expr = "ERROR"
+        matchings = []
+        pattern = re.compile(expr)
+        with open(path) as f:
+            for line in f:
+                m = pattern.search(line)
+                if m:
+                    matchings.append([line])
+                    try:
+                        while line.find("INFO") < 0:
+                            line = f.next()
+                            matchings[-1].append(line)
+                    except StopIteration:
+                        break
+        return matchings
 
     def checkDataSize(self, cluster):
         (output, error) = cluster.nodetool("cfstats", capture_output=True)[0]

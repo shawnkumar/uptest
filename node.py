@@ -17,3 +17,7 @@ class Node:
 
     def get_address(self):
         return self.hosts[0]
+
+    def get_log(self):
+        path = execute(get_log, hosts=self.hosts)[0]
+        return path
