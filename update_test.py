@@ -11,17 +11,17 @@ class TestUpdate():
 
         [node1, node2] = cluster.get_nodes()
 
-        self.filldata(10000000000, cluster)
+        lastkey = self.fillData(10000000000, cluster)
 
         cluster.round_robin_update('apache/trunk')
 
         repout_node1 = cluster.nodetool('repair -hosts ' + node1.get_address(), nodes=[node1], capture_output=True)
         repout_node2 = cluster.nodetool('repair -hosts ' + node2.get_address(), nodes=[node2], capture_output=True)
 
-
+        self.
 
     def checkDataSize(self, cluster):
-        output = cluster.nodetool("cfstats", capture_output=True)
+        (output, error) = cluster.nodetool("cfstats", capture_output=True)
         abort = False
         if output.find("Standard1") == -1:
             abort = True
@@ -45,8 +45,11 @@ class TestUpdate():
         nodestring = cluster.get_nodestring()
         checking = True
         numWrites = 0
+        #write to initialize tables
+        cluster.stress("write n=10000 -schema replication\(factor=2\)")
         while checking:
             datasize = self.checkDataSize(cluster)
+            print "data size: " + datsize
             numWrites = int(float(target - datasize)/float(340))
             if datasize == 0:
                 print "zero"
@@ -56,7 +59,7 @@ class TestUpdate():
         with open(os.devnull, 'w') as nl:
             lastkey = firstkey + numWrites
             print "Starting big stress write"
-            cluster.stress("write n={numWrites} -pop seq={firstkey}..{lastkey} no-wrap -schema replication(factor=2)".format(numWrites=str(numWrites), firstkey=str(firstkey), lastkey=str(lastkey)))
+            cluster.stress("write n={numWrites} -pop seq={firstkey}..{lastkey} no-wrap -schema replication\(factor=2\)".format(numWrites=str(numWrites), firstkey=str(firstkey), lastkey=str(lastkey)))
             firstkey = lastkey + 1
             print "Flushing"
             cluster.nodetool('flush')
@@ -78,7 +81,7 @@ class TestUpdate():
                 keysneeded = int(float(target - currentsize)/float(270))
                 with open(os.devnull, 'w') as nl:
                     lastkey = firstkey + keysneeded
-                    cluster.stress("write n={keysneeded} -pop seq={firstkey}..{lastkey} no-wrap -schema replication(factor=2)".format(keysneeded=str(keysneeded), firstkey=str(firstkey), lastkey=str(lastkey)))
+                    cluster.stress("write n={keysneeded} -pop seq={firstkey}..{lastkey} no-wrap -schema replication\(factor=2\)".format(keysneeded=str(keysneeded), firstkey=str(firstkey), lastkey=str(lastkey)))
                     firstkey = lastkey + 1
                     print "Flushing"
                     cluster.nodetool('flush')

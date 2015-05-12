@@ -21,7 +21,7 @@ class Cluster(object):
     def get_nodestring(self):
         nodestring = ''
         for node in self.nodelist:
-            nodestring.append(node.get_address() + ',')
+            nodestring += node.get_address() + ','
         return nodestring[:-1]
 
     def get_session(self, nodes, keyspace=None, exclusive=False, cons_level=None):
