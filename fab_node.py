@@ -1,4 +1,5 @@
 from fabric.api import *
+from StringIO import StringIO
 import yaml
 
 def start():
@@ -40,14 +41,14 @@ def update(revision):
     run('rm -rf ~/fab/cassandra')
 
     # Find the SHA for the revision requested:
-    git_id = run('git --git-dir=$HOME/fab/cassandra.git rev-parse {revision}'.format(revision=version)).strip()
+    git_id = run('git --git-dir=$HOME/fab/cassandra.git rev-parse {revision}'.format(revision=revision)).strip()
 
     # Build Cassandra Checkout revision/tag:
     run('mkdir ~/fab/cassandra')
     run('git --git-dir=$HOME/fab/cassandra.git archive %s | tar x -C ~/fab/cassandra' % revision)
     run('echo -e \'%s\\n%s\\n\' > ~/fab/cassandra/0.GIT_REVISION.txt' % (revision, git_id))
     run('JAVA_HOME=~/fab/java ~/fab/ant/bin/ant -f ~/fab/cassandra/build.xml clean')
-    run('JAVA_HOME=~/fab/java ~/fab/ant/bin/ant -f ~/fab/cassandra/build.xml -Dversion={version}'.format(version=version))
+    run('JAVA_HOME=~/fab/java ~/fab/ant/bin/ant -f ~/fab/cassandra/build.xml')
 
     # Save config:
     conf_file = StringIO()
@@ -63,4 +64,4 @@ def update(revision):
     rackdc_file = StringIO()
     rackdc_file.write(rackdc)
     rackdc_file.seek(0)
-    put(rackdc, '~/fab/cassandra/conf/cassandra-rackdc.properties')
+    put(rackdc_file, '~/fab/cassandra/conf/cassandra-rackdc.properties')

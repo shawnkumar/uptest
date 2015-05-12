@@ -91,7 +91,9 @@ class Cluster(object):
                 else:
                     hosts = node.get_address()
 
-        command = "{base} {nodes} {cmds}".format(base=base, nodes=hosts, cmds=cmd)
+        hostnodes = "-h " + hosts
+
+        command = "{base} {nodes} {cmds}".format(base=base, nodes=hostnodes, cmds=cmd)
         if parallel:
             p = Popen(command, shell=True)
         elif capture_output:
